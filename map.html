@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Експедиція Й.-А. Гільденштедта (1774)</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,700;1,300&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-parchment: #f4f1ea;
+            --text-dark: #2c2a29;
+            --accent-red: #8b261b;
+            --border-sepia: #d1c9b8;
+            --sidebar-bg: #faf8f5;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Open Sans', sans-serif;
+            background-color: var(--bg-parchment);
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        #app-wrapper {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Панель наративу */
+        #storyboard {
+            width: 45%;
+            height: 100vh;
+            overflow-y: scroll;
+            background-color: var(--sidebar-bg);
+            box-shadow: 3px 0 15px rgba(0,0,0,0.12);
+            z-index: 10;
+            position: relative;
+            scroll-behavior: smooth;
+        }
+
+        /* Панель карти */
+        #map-container {
+            width: 55%;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+        }
+
+        #map { width: 100%; height: 100%; }
+
+        /* Типографіка та блоки */
+        .title-screen {
+            padding: 80px 50px;
+            text-align: center;
+            border-bottom: 2px solid var(--border-sepia);
+            background: linear-gradient(rgba(250, 248, 245, 0.9), rgba(250, 248, 245, 0.9)), url('https://www.transparenttextures.com/patterns/aged-paper.png');
+        }
+
+        .title-screen h1 {
+            font-family: 'Merriweather', serif;
+            font-size: 2.2rem;
+            color: var(--accent-red);
+            margin-bottom: 20px;
+        }
+
+        .title-screen p {
+            font-size: 1.1rem;
+            color: #444;
+            line-height: 1.7;
+        }
+
+        .chapter {
+            padding: 60px 50px;
+            min-height: 60vh;
+            border-bottom: 1px solid var(--border-sepia);
+            transition: background-color 0.6s ease, border-left 0.3s ease;
+            border-left: 5px solid transparent;
+        }
+
+        .chapter.active {
+            background-color: #fffdf7;
+            border-left: 5px solid var(--accent-red);
+        }
+
+        .chapter h2 {
+            font-family: 'Merriweather', serif;
+            color: var(--accent-red);
+            margin-top: 0;
+            font-size: 1.8rem;
+        }
+
+        .chapter .date-badge {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #666;
+            margin-bottom: 15px;
+            display: inline-block;
+            background: #e8e3d5;
+            padding: 4px 10px;
+            border-radius: 3px;
+        }
+
+        .chapter p {
+            line-height: 1.8;
+            font-size: 1.1rem;
+            text-align: justify;
+            margin-bottom: 20px;
+        }
+
+        /* Попапи карти */
+        .leaflet-popup-content-wrapper {
+            background-color: var(--sidebar-bg);
+            border: 1px solid var(--border-sepia);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            border-radius: 2px;
+        }
+
+        .leaflet-popup-content {
+            font-family: 'Merriweather', serif;
+            color: var(--text-dark);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        .leaflet-popup-content b {
+            color: var(--accent-red);
+            display: block;
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--border-sepia);
+            padding-bottom: 4px;
+        }
+
+        /* Мобільний макет */
+        @media (max-width: 960px) {
+            #app-wrapper { flex-direction: column-reverse; }
+            #storyboard { width: 100%; height: 50vh; }
+            #map-container { width: 100%; height: 50vh; }
+            .chapter { min-height: auto; padding: 40px 25px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-wrapper">
+    <!-- Текстова панель (Сторітелінг) -->
+    <div id="storyboard">
+        <header class="title-screen">
+            <h1>Подорож Єлисаветградською провінцією (1774)</h1>
+            <p>Цифрова реконструкція щоденників академіка Йогана-Антона Гільденштедта. Зануртесь у детальне дослідження природи, мілітарного устрою, ремісничих технологій та життя багатонаціонального населення краю у XVIII столітті.</p>
+        </header>
+
+        <!-- Етапи експедиції -->
+        <article class="chapter" id="loc_kremenchug">
+            <span class="date-badge">Лютий – Квітень 1774</span>
+            <h2>Кременчуг та Крюков</h2>
+            <p>На початку року експедиція зупинилася в Кременчуці. Тут академік зосередився на фенологічних та метеорологічних спостереженнях. 8 лютого він зафіксував унікальне північне сяйво, що нагадувало матово-білі стовпи світла. З настанням весни Гільденштедт ретельно записав дати скресання криги на Дніпрі та початок цвітіння фруктових садів. 6 травня мандрівники переправилися на правий берег Дніпра до Крюкова.</p>
+        </article>
+
+        <article class="chapter" id="loc_sholmosh">
+            <span class="date-badge">8 Травня 1774</span>
+            <h2>Табурище та Шолмош</h2>
+            <p>Рухаючись на захід, експедиція дослідила Табурище та прибула до Шолмоша — важливого військового шанця Жовтого гусарського полку. Гільденштедт задокументував багатство місцевої природи, зокрема дикий хмель, що ріс у прилеглих лісових масивах, та складний рельєф із крутими ярами поблизу річки Омельник.</p>
+        </article>
+
+        <article class="chapter" id="loc_chigirin">
+            <span class="date">13 Травня 1774</span>
+            <h2>Чигирин</h2>
+            <p>У Чигирині дослідник оглянув залишки козацької фортеці на височині над Тясмином. Тут він побачив два глибокі кар'єри, де місцеві ремісники видобували пісковик для створення млинових жорен. Ці жорна активно експортувалися на територію Російської імперії. Також академік зафіксував зростання катрану (Crambe Tataria) та дикого чебрецю, які активно використовувались селянами в їжу. Особливу увагу він приділив критиці зловживань місцевих польських комісарів щодо селян.</p>
+        </article>
+
+        <article class="chapter" id="loc_dmitrovka">
+            <span class="date-badge">14 – 18 Травня 1774</span>
+            <h2>Нестерівка, Вершац та Дмитрівка</h2>
+            <p>Експедиція зупинялася у Нестерівці (Вершацькому шанці), розташованій правильними вулицями на схилах річки Чутки. Але найбільше Гільденштедта вразила велика рота Дмитрівка. В поселенні з 500 будинків мешкала унікальна суміш етносів: малороси, молдавани, волохи, серби та близько 100 родин болгар, нещодавно переселених генералом Румянцевим з-під Сілістрії. Поруч, у слободі Плоска, процвітала громада старовірів, які зберегли російські традиції, займалися вирощуванням льону та будували передові лісопильні.</p>
+        </article>
+
+        <article class="chapter" id="loc_lozovatka">
+            <span class="date-badge">23 – 25 Травня 1774</span>
+            <h2>Лозуватка</h2>
+            <p>У степах навколо Лозуватки дослідник прискіпливо вивчав сільське господарство. Місцеві селяни використовували важкий плуг грузинського типу, у який впрягали по 3-4 воли. Вони орали цілину неглибоко, що призводило до швидкого засмічення полів бур'янами. Попри відсутність правильної сівозміни, перший врожай проса та наступний урожай гречки вражали обсягами (від сам-20 до сам-40).</p>
+        </article>
+
+        <article class="chapter" id="loc_mirgorod">
+            <span class="date-badge">26 Травня 1774</span>
+            <h2>Новий Миргород</h2>
+            <p>Новий Миргород (колишні Тресяги) був адміністративним центром Чорного гусарського полку та резиденцією генерала І. Хорвата. Гільденштедт залишив детальний опис технології місцевих чинбарів: овечі шкури обробляли сумахом із Південного Бугу, що відбілював шкіру. Жовтий колір сап'яну отримували з незрілих ягід крушини, а темно-червоний — з відвару материнки та листя дикої яблуні. Також згадується місцевий цегельний завод, що випускав дешеву, але неякісну цеглу.</p>
+        </article>
+        
+        <article class="chapter" id="loc_ekaterininsky">
+            <span class="date-badge">1 – 3 Червня 1774</span>
+            <h2>Синюхин Брід та Катерининський шанець</h2>
+            <p>Пройшовши через Петроострів та Добрянку, експедиція досягла Катерининського шанця (нині Первомайськ), заснованого у 1770 році для захисту переправи через Синюху. Згодом мандрівники відвідали Павловськ (Новоукраїнку), де розташовувався шанець правильної квадратної форми і якраз зводилася церква Святого Георгія.</p>
+        </article>
+        
+        <article class="chapter" id="loc_viska">
+            <span class="date-badge">6 Червня 1774</span>
+            <h2>Виска та старі майдани</h2>
+            <p>Прямуючи до Єлисаветграда, Гільденштедт дослідив територію біля слободи Вись. Увагу природознавця привернули великі селітряні пагорби. Ці штучні насипи були залишені з часів масштабного селітряного промислу, який контролював миргородський полковник Данило Апостол у першій половині XVIII століття.</p>
+        </article>
+
+        <article class="chapter" id="loc_elisavetgrad">
+            <span class="date-badge">6 – 11 Червня 1774</span>
+            <h2>Фортеця Святої Єлисавети</h2>
+            <p>У серці провінції, фортеці Св. Єлисавети, Гільденштедт задокументував складну соціальну та санітарну ситуацію. Шестикутна фортеця була оточена слободами: Пермською, Грецькою, Поділом та Пуковою. Дослідник з'ясував причину епідемії цинги серед гарнізону — застояна, солона та майже гнила вода з колодязів і пересохлого русла Інгулу. Попри це, економіка вирувала: державний цегельний завод працював на повну потужність завдяки дешевим дровам з Чорного лісу, а до міста прибували нові партії старовірів із Бєлгородської провінції.</p>
+        </article>
+
+        <article class="chapter" id="loc_kamenka" style="margin-bottom: 50vh;">
+            <span class="date-badge">17 Черв. – 1 Лип. 1774</span>
+            <span style="height:30vh; display:block"></span> <!-- Простір для комфортного скролу до останньої точки -->
+            <h2>Кам'янка та Мишурин Ріг</h2>
+            <p>Завершальний етап подорожі пролягав вздовж Дніпра. Дослідник вивчав прибережні екосистеми, величні давні ліси та острови. Його записи в районі Кам'янки та Мишуриного Рогу зафіксували первісний стан дніпровських порогів і луків до їхнього масштабного антропогенного перетворення у наступні століття.</p>
+        </article>
+    </div>
+
+    <!-- Область карти -->
+    <div id="map-container">
+        <div id="map"></div>
+    </div>
+</div>
+
+<!-- Бібліотека Leaflet -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<script>
+    // Ініціалізація карти
+    const map = L.map('map', { zoomControl: false }).setView([48.6, 32.2], 7);
+    L.control.zoom({ position: 'topright' }).addTo(map);
+
+    // Додавання тайлів OSM
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap | Historic Data: Yastrebov / Pivovar',
+        maxZoom: 18,
+    }).addTo(map);
+
+    // Вичерпна база координат експедиції 1774 року
+    const journeyData = [
+        { id: 'loc_kremenchug', lat: 49.0629, lng: 33.4042, zoom: 12, title: 'Кременчуг', desc: 'Фенологічні спостереження, північне сяйво.' },
+        { id: 'loc_sholmosh', lat: 48.9247, lng: 33.4683, zoom: 12, title: 'Шолмош (Калантаїв)', desc: 'Шанець Жовтого гусарського полку.' },
+        { id: 'loc_chigirin', lat: 49.0767, lng: 32.6567, zoom: 14, title: 'Чигирин', desc: 'Видобуток жорен, козацькі руїни, чагарники катрану.' },
+        { id: 'loc_dmitrovka', lat: 48.7847, lng: 32.7236, zoom: 12, title: 'Дмитрівка та Вершац', desc: 'Багатонаціональна рота (серби, болгари, волохи) та поселення старовірів.' },
+        { id: 'loc_lozovatka', lat: 48.6833, lng: 33.0500, zoom: 12, title: 'Лозуватка', desc: 'Аграрні спостереження, використання грузинського плуга.' },
+        { id: 'loc_mirgorod', lat: 48.8167, lng: 31.6500, zoom: 13, title: 'Новий Миргород', desc: 'Штаб Чорного полку, інноваційні методи дублення шкіри.' },
+        { id: 'loc_ekaterininsky', lat: 48.0439, lng: 30.8500, zoom: 11, title: 'Катерининський шанець', desc: 'Фортифікація на річці Синюха, дорога на Бендери.' },
+        { id: 'loc_viska', lat: 48.5167, lng: 31.6333, zoom: 13, title: 'Виска', desc: 'Давні козацькі селітряні майдани.' },
+        { id: 'loc_elisavetgrad', lat: 48.5000, lng: 32.2667, zoom: 14, title: 'Фортеця Св. Єлисавети', desc: 'Військово-адміністративний центр, епідемія цинги через погану воду.' },
+        { id: 'loc_kamenka', lat: 48.8333, lng: 33.9667, zoom: 11, title: 'Мишурин Ріг та Кам\'янка', desc: 'Дослідження дніпровських берегів, порогів та пралісів.' }
+    ];
+
+    // Повний масив усіх 29 точок для відмальовування точної лінії маршруту
+    const fullRouteCoords = [
+        [49.0629, 33.4042], [49.0275, 33.4322], [49.0522, 33.2458], [48.9247, 33.4683],
+        [49.0064, 32.7842], [49.0100, 32.8000], [49.0767, 32.6567], [49.0064, 32.7842],
+        [48.7847, 32.7236], [48.6167, 33.1000], [48.9167, 33.3500], [48.6833, 33.0500],
+        [48.8167, 31.6500], [48.7667, 31.5167], [48.6667, 31.3333], [48.3833, 31.0500],
+        [48.1667, 30.9333], [48.0439, 30.8500], [48.3167, 31.5333], [48.5167, 31.5500],
+        [48.5167, 31.6333], [48.5000, 32.2667], [48.5333, 32.5333], [48.6500, 33.3500],
+        [48.3167, 33.2500], [48.6833, 33.4500], [48.7833, 33.9167], [48.8333, 33.9667]
+    ];
+
+    // Малювання лінії повного маршруту
+    L.polyline(fullRouteCoords, {
+        color: '#8b261b', weight: 4, opacity: 0.6, dashArray: '8, 8'
+    }).addTo(map);
+
+    const markerDict = {};
+    const defaultIcon = new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+    });
+
+    journeyData.forEach(loc => {
+        const marker = L.marker([loc.lat, loc.lng], {icon: defaultIcon}).addTo(map);
+        marker.bindPopup(`<b>${loc.title}</b><p>${loc.desc}</p>`);
+        markerDict[loc.id] = marker;
+    });
+
+    // Intersection Observer для синхронізації тексту та карти
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                document.querySelectorAll('.chapter').forEach(c => c.classList.remove('active'));
+                entry.target.classList.add('active');
+                
+                const locData = journeyData.find(l => l.id === entry.target.id);
+                if (locData) {
+                    map.flyTo([locData.lat, locData.lng], locData.zoom, { animate: true, duration: 1.8 });
+                    setTimeout(() => markerDict[locData.id].openPopup(), 1800);
+                }
+            }
+        });
+    }, { root: document.querySelector('#storyboard'), rootMargin: '0px', threshold: 0.55 });
+
+    document.querySelectorAll('.chapter').forEach(chapter => observer.observe(chapter));
+</script>
+</body>
+</html>
